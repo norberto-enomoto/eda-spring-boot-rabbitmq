@@ -2,47 +2,66 @@
 
 ```mermaid
 graph TB
-    subgraph "Infraestrutura"
-        EUREKA["Eureka Server"]
-        GATEWAY["API Gateway<br>(Spring Cloud Gateway)"]
-        RABBITMQ["RabbitMQ"]
+    subgraph "Camada de Cliente"
+        Client[Cliente]
     end
 
-    subgraph "Microsserviços"
-        PRODUCT["Serviço de Produtos<br>(Spring Boot + MySQL)"]
-        ORDER["Serviço de Pedidos<br>(Spring Boot + MySQL)"]
-        USER["Serviço de Usuários<br>(Spring Boot + MySQL)"]
-        CONSUMER["ConsumerService<br>(Spring Boot)"]
+    subgraph "Camada de Gateway"
+        APIGW["Gateway (Spring Cloud Gateway)"]
     end
 
-    CLIENT["Cliente"]
-
-    CLIENT -->|HTTP/HTTPS| GATEWAY
-    GATEWAY -->|HTTP| PRODUCT
-    GATEWAY -->|HTTP| ORDER
-    GATEWAY -->|HTTP| USER
-
-    PRODUCT -->|Registry| EUREKA
-    ORDER -->|Registry| EUREKA
-    USER -->|Registry| EUREKA
-    CONSUMER -->|Registry| EUREKA
-    GATEWAY -->|Service Discovery| EUREKA
-
-    PRODUCT <-->|Pub/Sub| RABBITMQ
-    ORDER <-->|Pub/Sub| RABBITMQ
-    USER <-->|Pub/Sub| RABBITMQ
-    RABBITMQ -->|Consume| CONSUMER
-
-    subgraph "Banco de Dados"
-        PRODUCT_DB[(Produtos DB<br>MySQL)]
-        ORDER_DB[(Pedidos DB<br>MySQL)]
-        USER_DB[(Usuários DB<br>MySQL)]
+    subgraph "Camada de Descoberta de Serviço"
+        Eureka[Eureka Server]
     end
 
-    PRODUCT -->|JDBC| PRODUCT_DB
-    ORDER -->|JDBC| ORDER_DB
-    USER -->|JDBC| USER_DB
-```
+    subgraph "Camada de Microsserviços"
+        MS1[Microsserviço <br>Produtos]
+        MS2[Microsserviço <br>Pedidos]
+        MS3[Microsserviço <br>Usuários]
+        MS4[Microsserviço <br>ConsumerService]
+    end
+
+    subgraph "Camada de Mensageria"
+        RabbitMQ[RabbitMQ]
+    end
+
+    subgraph "Camada de Dados"
+        DB1[(MySQL<br>Produtos)]
+        DB2[(MySQL<br>Pedidos)]
+        DB3[(MySQL<br>Usuários)]
+    end
+
+    Client -->|HTTP/HTTPS| APIGW
+    APIGW -->|HTTP| MS1
+    APIGW -->|HTTP| MS2
+    APIGW -->|HTTP| MS3
+
+    MS1 -->|Registra| Eureka
+    MS2 -->|Registra| Eureka
+    MS3 -->|Registra| Eureka
+    MS4 -->|Registra| Eureka
+    APIGW -->|Consulta| Eureka
+
+    MS1 <-->|Pub/Sub| RabbitMQ
+    MS2 <-->|Pub/Sub| RabbitMQ
+    MS3 <-->|Pub/Sub| RabbitMQ
+    RabbitMQ -->|Consume| MS4
+
+    MS1 -->|JDBC| DB1
+    MS2 -->|JDBC| DB2
+    MS3 -->|JDBC| DB3
+
+    classDef microservice fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef database fill:#bdf,stroke:#333,stroke-width:2px;
+    classDef gateway fill:#fdfd96,stroke:#333,stroke-width:2px;
+    classDef discovery fill:#90EE90,stroke:#333,stroke-width:2px;
+    classDef messaging fill:#FFA07A,stroke:#333,stroke-width:2px;
+    class MS1,MS2,MS3,MS4 microservice;
+    class DB1,DB2,DB3 database;
+    class APIGW gateway;
+    class Eureka discovery;
+    class RabbitMQ messaging;
+```  
 
 - Executar o docker compose: docker-compose up
 
